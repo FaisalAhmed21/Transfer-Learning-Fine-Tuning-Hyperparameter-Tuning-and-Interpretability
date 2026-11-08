@@ -16,8 +16,7 @@ This repository implements an end-to-end toxic comment classification pipeline o
 
 ### Dataset & Binarisation Threshold
 * **Loading:** Loaded directly via `load_dataset("google/civil_comments")` from the Hugging Face `datasets` library using the official `train` (`1,804,874` rows), `validation` (`97,320` rows), and `test` (`97,320` rows) splits.
-* **Label Binarisation Threshold:** Continuous toxicity scores (`toxicity` $\in [0, 1]$) are converted into binary labels using a threshold of **`0.5`**:
-  $$\text{label} = \begin{cases} 1 \text{ (toxic)} & \text{if } \text{toxicity} \ge 0.5 \\ 0 \text{ (not toxic)} & \text{if } \text{toxicity} < 0.5 \end{cases}$$
+* **Label Binarisation Threshold:** Continuous toxicity scores ($\text{toxicity} \in [0, 1]$) are converted into binary labels using a threshold of **`0.5`** (`toxicity >= 0.5` $\rightarrow$ `1` [toxic], `< 0.5` $\rightarrow$ `0` [not toxic]).
 * **Class Imbalance & Balanced Subsampling:** Raw Civil Comments splits are heavily imbalanced (`8.00%` toxic in train, `7.88%` in validation, `7.99%` in test; mean toxicity $\approx 0.101–0.103$). Training a frozen linear head on an ~8% positive distribution risks collapsing into a trivial majority-class predictor. To ensure stable gradients and a controlled comparison across stages without cross-split leakage, we drew **50/50 class-balanced subsets** strictly from each official split:
   * **Train Subset:** `30,000` comments (`15,000` toxic / `15,000` not toxic)
   * **Validation Subset:** `7,500` comments (`3,750` toxic / `3,750` not toxic)
@@ -84,12 +83,12 @@ We performed a 6-point grid search over **learning rate** $\in \{1\text{e-}5, 2\
 
 ## 4. Test on Real-World Text
 
-We evaluated the tuned fine-tuned model (`threshold = 0.30`) on 6 custom sentences written outside the Civil Comments dataset to test out-of-distribution generalisation:
+We evaluated the tuned fine-tuned model (`threshold = 0.30`) on 6 custom sentences written outside the Civil Comments corpus to test out-of-distribution generalisation:
 
 | # | Input Text | Expected Class | Predicted Class | `P(toxic)` | Agrees? | Short Check of Prediction |
 | :-: | :--- | :---: | :---: | :---: | :---: | :--- |
 | **1** | `"You are an idiot and nobody wants you here. Shut up already."` | `toxic` | **`toxic`** | `0.9948` | ✅ Yes | Direct personal insult (`idiot`) plus a hostile demand to leave/stop speaking. Correctly flagged with 99.5% confidence. |
-| **2** | `"I disagree with this proposal, but the cost table is useful. Could you share the source for the 12 percent figure?"` | `not toxic` | **`not toxic`** | `0.0024` | ✅ Yes | Polite disagreement and constructive factual inquiry without insults. Correctly classified as civil (`0.002`). |
+| **2** | `"I disagree with this proposal, but the cost table is useful. Could you share the source for the 12 percent figure?"` | `not toxic` | **`not toxic`** | `0.0024` | ✅ Yes | Polite policy disagreement and constructive factual inquiry without insults. Correctly classified as civil (`0.002`). |
 | **3** | `"These immigrants are vermin and do not belong in this city."` | `toxic` | **`not toxic`** | `0.0858` | ❌ No | **Hard Failure Case:** Dehumanising group attack using the metaphor `vermin` inside formal syntax. Because it lacks common conversational profanity/slurs, the model assigns `P(toxic) = 0.086` (above civil comments' `0.002`, but below the `0.30` cutoff), highlighting a known lexical blind spot for metaphorical hate speech. |
 | **4** | `"Thank you for the careful write-up. The timeline made the argument much easier to follow."` | `not toxic` | **`not toxic`** | `0.0020` | ✅ Yes | Appreciation and specific positive feedback. Correctly classified as not toxic. |
 | **5** | `"This pathetic loser ruined the whole meeting and should get lost."` | `toxic` | **`toxic`** | `0.9952` | ✅ Yes | Direct personal attack (`pathetic loser`, `get lost`) aimed at an individual. Correctly flagged as toxic. |
