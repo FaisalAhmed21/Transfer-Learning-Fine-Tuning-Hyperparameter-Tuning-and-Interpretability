@@ -1,0 +1,7 @@
+text,expected,predicted,p_toxic,agrees
+You are an idiot and nobody wants you here. Shut up already.,toxic,toxic,0.9948,True
+"I disagree with this proposal, but the cost table is useful. Could you share the source for the 12 percent figure?",not toxic,not toxic,0.0024,True
+These immigrants are vermin and do not belong in this city.,toxic,not toxic,0.0858,False
+Thank you for the careful write-up. The timeline made the argument much easier to follow.,not toxic,not toxic,0.002,True
+This pathetic loser ruined the whole meeting and should get lost.,toxic,toxic,0.9952,True
+"Oh wonderful, another delay. Exactly what everyone was hoping for.",not toxic,not toxic,0.0027,True
